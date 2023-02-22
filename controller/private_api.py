@@ -23,7 +23,7 @@ async def today(app_id, request: Request):
     try:
         if StringUtil.isEmpty(app_id):
             logging.warning("path args: app_id is empty!")
-            result = ReedResult.get(ErrorCode.APPID_NOT_FOUND.value)
+            result = ReedResult.get(ErrorCode.APPID_NOT_FOUND)
             return result
         key = "calendar_"+app_id
         exists = await redis_conn.exists(key)
@@ -242,7 +242,6 @@ async def post_put_configuration(app_id, request: Request, check_times=Form(),
             await request.app.state.redis.hdel(app_id_key)
         result = ReedResult.get(ErrorCode.UNKNOWN_ERROR, e.__dict__)
         return result
-
 
 
 
