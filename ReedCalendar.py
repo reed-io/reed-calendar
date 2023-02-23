@@ -90,9 +90,9 @@ ReedCalendar.add_middleware(
 )
 
 redis_config = {
-    "host": "redis-server-host",
-    "port": 6379,
-    "password": "redis-pwd",
+    "host": "11.11.78.167",
+    "port": 6001,
+    "password": "Eui763!!",
     "db": 15
 }
 
@@ -148,6 +148,6 @@ async def fastapi_exception_handler(request: Request, exc: Exception):
 
 
 if __name__ == "__main__":
-    uvicorn.run("ReedCalendar:ReedCalendar", host="0.0.0.0", port=5000, log_config=logging_config)
+    uvicorn.run("ReedCalendar:ReedCalendar", host="0.0.0.0", port=7000, log_config=logging_config)
 
 

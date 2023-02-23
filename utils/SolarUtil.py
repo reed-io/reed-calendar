@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from math import ceil
-
+import datetime
 from utils import DateTimeUtil
 
 
@@ -176,3 +176,33 @@ class SolarUtil:
         if week == 7:
             week = 0
         return int(ceil((days + week - start) * 1.0 / len(SolarUtil.WEEK)))
+
+    @staticmethod
+    def getWeekFirstDay(date: datetime.date):
+        """
+        :param date: 日期
+        :return: 日期所属周的星期一
+        """
+        week = date.isoweekday()
+        n = datetime.timedelta(days=week - 1)
+        return date - n
+
+    @staticmethod
+    def getWeekLastDay(date: datetime.date):
+        """
+        :param date: 日期
+        :return: 日期所属周的星期日
+        """
+        week = date.isoweekday()
+        n = datetime.timedelta(days=7 - week)
+        return date + n
+
+    @staticmethod
+    def getNextWeekLastDay(date: datetime.date):
+        """
+        :param date: 日期
+        :return: 日期所属下一周的星期日
+        """
+        week = date.isoweekday()
+        n = datetime.timedelta(days=7 - week + 7)
+        return date + n
