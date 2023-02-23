@@ -90,9 +90,9 @@ ReedCalendar.add_middleware(
 )
 
 redis_config = {
-    "host": "redis host",
+    "host": "redis-server-host",
     "port": 6379,
-    "password": "redis password",
+    "password": "redis-pwd",
     "db": 15
 }
 

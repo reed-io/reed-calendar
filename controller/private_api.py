@@ -25,7 +25,7 @@ async def today(app_id, request: Request):
             logging.warning("path args: app_id is empty!")
             result = ReedResult.get(ErrorCode.APPID_NOT_FOUND)
             return result
-        key = "calendar_"+app_id
+        key = __get_app_id_key(app_id)
         exists = await redis_conn.exists(key)
         if not exists:
             logging.warning("can not find "+key+" in redis!")
@@ -64,7 +64,7 @@ async def get_configuration(app_id, request: Request):
             logging.warning("path args: app_id is empty!")
             result = ReedResult.get(ErrorCode.APPID_NOT_FOUND)
             return result
-        key = "calendar_" + app_id
+        key = __get_app_id_key(app_id)
         exists = await redis_conn.exists(key)
         if not exists:
             result = ReedResult.get(ErrorCode.APPID_NOT_CONFIGURED)
@@ -98,12 +98,12 @@ async def someday(app_id, date, request: Request):
             logging.warning("path args: app_id is empty!")
             result = ReedResult.get(ErrorCode.APPID_NOT_FOUND)
             return result
-        if not TimeUtil.is_validate_datetime(date):
+        if not TimeUtil.is_validate_date(date):
             logging.warning("invalidate date format")
             result = ReedResult.get(ErrorCode.DATE_INVALIDATE, date)
             return result
 
-        key = "calendar_" + app_id
+        key = __get_app_id_key(app_id)
         exists = await redis_conn.exists(key)
         if not exists:
             result = ReedResult.get(ErrorCode.APPID_NOT_CONFIGURED)
@@ -131,13 +131,13 @@ async def someday(app_id, date, request: Request):
         return result
 
 @private.api_route("/{app_id}/configuration", methods=["PUT", "POST"], tags=["创建或修改配置信息"])
-async def post_put_configuration(app_id, request: Request, check_times=Form(),
-                                 important_days=Form()):
+async def post_put_configuration(app_id, request: Request, check_times=Form(None),
+                                 important_days=Form(None)):
     redis_conn = request.app.state.redis
     method = request.method
     logging.debug(method)
     logging.debug("app_id=" + app_id)
-    app_id_key = "calendar_" + app_id
+    app_id_key = __get_app_id_key(app_id)
     try:
         params = await request.form()
         logging.debug("params="+str(params))
@@ -233,7 +233,7 @@ async def post_put_configuration(app_id, request: Request, check_times=Form(),
         if important_days and len(important_day_list) > 0:
             result_dict["important_days"] = important_day_list
         if len(year_data_dict.keys()) > 0:
-            result_dict["year_data"] = str(year_data_dict)
+            result_dict["year_data"] = year_data_dict
         result = ReedResult.get(ErrorCode.SUCCESS, result_dict)
         return result
     except Exception as e:
@@ -243,6 +243,92 @@ async def post_put_configuration(app_id, request: Request, check_times=Form(),
         result = ReedResult.get(ErrorCode.UNKNOWN_ERROR, e.__dict__)
         return result
 
+
+@private.put("/{app_id}/{date}", tags=["设置指定日期信息"])
+async def put_date_configuration(request: Request, app_id: str, date: str, is_work=Form(None), date_des_list=Form(None)):
+    logging.debug(f"app_id={app_id}, date={date}")
+    redis_conn = request.app.state.redis
+    if StringUtil.isEmpty(app_id):
+        logging.error("path args app_id is empty!")
+        result = ReedResult.get(ErrorCode.APPID_NOT_FOUND)
+        return result
+    if not TimeUtil.is_validate_date(date):
+        logging.error("path args date is invalidate")
+        result = ReedResult.get(ErrorCode.DATE_INVALIDATE)
+        return result
+    if is_work:
+        if str(is_work) != "0" and str(is_work) != "1":  # 0=工作, 1=休息
+            logging.error("form args is_work is invalidate")
+            result = ReedResult.get(ErrorCode.IS_WORK_INVALIDATE, is_work)
+            return result
+
+    if date_des_list:
+        date_des_list = eval(date_des_list)
+        if type(date_des_list) is not list:
+            logging.error("form args date_des_list is invalidate")
+            result = ReedResult.get(ErrorCode.DATE_DES_LIST_INVALIDATE, date_des_list)
+            return result
+        for des in date_des_list:
+            if type(des) is not str or StringUtil.isEmpty(des):
+                logging.error("form args date_des_list contains bad item")
+                result = ReedResult.get(ErrorCode.DATE_DES_LIST_ITEM_INVALIDATE, [date_des_list, des])
+                return result
+
+    app_id_key = __get_app_id_key(app_id)
+    d = TimeUtil.get_date(date)
+    year_key = "year_"+str(d.year)
+    app_id_exists = await redis_conn.exists(app_id_key)
+    modified_dict = {}
+    if not app_id_exists:
+        logging.error(f"{app_id} never configured yet")
+        result = ReedResult.get(ErrorCode.APPID_NOT_CONFIGURED, app_id)
+        return result
+    if is_work:
+        year_config_exists = await redis_conn.hexists(app_id_key, year_key)
+        if not year_config_exists:
+            logging.error(f"{app_id} config can not find {year_key}")
+            result = ReedResult.get(ErrorCode.YEAR_CONFIG_NOT_FOUND, d.year)
+            return result
+        year_work_days = await redis_conn.hget(app_id_key, year_key)
+        logging.debug(f"before modify:{year_work_days}")
+        date_idx = TimeUtil.get_days_index(d)
+        year_work_days_list = list(year_work_days)
+        year_work_days_list[date_idx] = is_work
+        logging.debug(f"set {date_idx} of {year_work_days_list} to {is_work}")
+        year_work_days = "".join(year_work_days_list)
+        logging.debug(f"after modify:{year_work_days}")
+        await redis_conn.hset(app_id_key, year_key, year_work_days)
+        modified_dict[str(d.year)] = year_work_days
+    if date_des_list:
+        app_id_important_days = await redis_conn.hget(app_id_key, "important_days")
+        logging.debug(type(app_id_important_days))
+        logging.debug(str(app_id_important_days))
+        # important_day = filter(lambda item: item["type"] == "normal" and item["key"] == str(d.month)+"-"+str(d.day), app_id_important_days)
+        contains_flag = False
+        app_id_important_days = eval(app_id_important_days)
+        for important_day in app_id_important_days:
+            if important_day["type"] == "normal" and important_day["key"] == str(d.month)+"-"+str(d.day):
+                important_day["value"] = ",".join(date_des_list)
+                contains_flag = True
+                break
+        if not contains_flag:
+            important_day = {
+                "type": "normal",
+                "key": str(d.month)+"-"+str(d.day),
+                "value": ",".join(date_des_list)
+            }
+            app_id_important_days.append(important_day)
+        await redis_conn.hset(app_id_key, "important_days", str(app_id_important_days))
+        modified_dict["important_days"] = app_id_important_days
+    result = ReedResult.get(ErrorCode.SUCCESS, modified_dict)
+    return result
+
+
+
+
+
+def __get_app_id_key(app_id: str):
+    return "calendar_" + app_id
 
 
 """

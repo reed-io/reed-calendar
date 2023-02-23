@@ -91,6 +91,14 @@ class TimeUtil(object):
         return True
 
     @staticmethod
+    def is_validate_date(dt: str) -> bool:
+        try:
+            datetime.strptime(dt, "%Y-%m-%d")
+        except Exception as e:
+            return False
+        return True
+
+    @staticmethod
     def is_leap_year(year: int) -> bool:
         if year % 4 == 0 and year % 100 != 0 or year % 400 == 0:
             return True

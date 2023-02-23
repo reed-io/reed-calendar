@@ -1,9 +1,9 @@
 import redis
 
 redis_config = {
-    "host": "service.persona.net.cn",
+    "host": "redis-host",
     "port": 6379,
-    "password": "Shashiyuefu@2021",
+    "password": "redis-pwd",
     "db": 15
 }
 
@@ -15,6 +15,6 @@ redis_conn = redis.Redis(connection_pool=pool)
 
 print(redis_conn.keys())
 print(redis_conn.get("test1"))
-print(redis_conn.hkeys("calendar_test7"))
+print(redis_conn.hkeys("calendar_test1"))
 
 

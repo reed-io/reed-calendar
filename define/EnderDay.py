@@ -117,19 +117,25 @@ class EnderDay:
     def _private_important_days(self, important_days: list) -> list:
         private_important_days = list()
         for day in important_days:
-            day = eval(day)
+            # day = eval(day)
             if day["type"] == "normal":
                 key = "%d-%d" % (self.__dt.month, self.__dt.day)
                 if day["key"] == key:
-                    private_important_days.append(day["value"])
+                    value_list = day["value"].split(",")
+                    for value in value_list:
+                        private_important_days.append(str(value).strip())
             if day["type"] == "week":
                 key = "%d-%d-%d" % (self.__dt.month, int(ceil(self.__dt.day / 7.0)), self.get_weekday_idx())
                 if day["key"] == key:
-                    private_important_days.append(day["value"])
+                    value_list = day["value"].split(",")
+                    for value in value_list:
+                        private_important_days.append(str(value).strip())
             if day["type"] == "lunar":
                 key = "%d-%d" % (self.__lunar.getMonth(), self.__lunar.getDay())
                 if day["key"] == key:
-                    private_important_days.append(day["value"])
+                    value_list = day["value"].split(",")
+                    for value in value_list:
+                        private_important_days.append(str(value).strip())
         return private_important_days
 
     def _private_is_work_day(self, private_calendar_data: str) -> bool:
