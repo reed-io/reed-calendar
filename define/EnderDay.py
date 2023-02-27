@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 from datetime import datetime
 from define.Solar import Solar
 from utils.EnderUtil import TimeUtil
@@ -20,6 +21,12 @@ class EnderDay:
 
     def get_datetime(self):
         return self.__dt
+
+    def get_year(self):
+        return self.__solar.getYear()
+
+    def get_month(self):
+        return self.__solar.getMonth()
 
     def is_leap_year(self):
         return self.__solar.isLeapYear()

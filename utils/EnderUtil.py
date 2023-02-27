@@ -6,6 +6,7 @@ import calendar
 
 import pytz
 
+
 class StringUtil(object):
     @staticmethod
     def isJson(source: str) -> bool:
@@ -15,7 +16,6 @@ class StringUtil(object):
             return False
         return True
 
-
     @staticmethod
     def isEmpty(source: str) -> bool:
         if type(source) == str and len(str(source).strip()) == 0:
@@ -23,11 +23,10 @@ class StringUtil(object):
         else:
             return False
 
-
     @staticmethod
     def isHttpUrl(url: str) -> bool:
         pattern = re.compile('https?://([\w]+\.)+[\w]+(/[\w./?%&=]*)?$')
-        return re.match(pattern, url)!=None
+        return re.match(pattern, url) != None
 
 
 class TimeUtil(object):
@@ -51,7 +50,7 @@ class TimeUtil(object):
 
     @staticmethod
     def unix_now() -> int:
-        return int(round(time.time()*1000))
+        return int(round(time.time() * 1000))
 
     @staticmethod
     def local_time_struct(timeStr: str) -> datetime:
@@ -72,7 +71,7 @@ class TimeUtil(object):
 
     @staticmethod
     def get_seconds(timeStr: str) -> int:
-        return int(round(time.mktime(time.strptime(timeStr, "%Y-%m-%d %H:%M:%S"))))*1000
+        return int(round(time.mktime(time.strptime(timeStr, "%Y-%m-%d %H:%M:%S")))) * 1000
 
     @staticmethod
     def is_validate_timezone(timezone: str) -> bool:
@@ -89,6 +88,14 @@ class TimeUtil(object):
         except Exception as e:
             return False
         return True
+
+    @staticmethod
+    def is_validate_year(dt: int) -> bool:
+        return True if 1900 <= dt <= 2099 else False
+
+    @staticmethod
+    def is_validate_month(dt: int) -> bool:
+        return True if 1 <= dt <= 12 else False
 
     @staticmethod
     def is_validate_date(dt: str) -> bool:
@@ -111,21 +118,20 @@ class TimeUtil(object):
         day = dt.day
         result = 0
         for idx in range(len(TimeUtil.month_days)):
-            if month > idx+1:
+            if month > idx + 1:
                 if not TimeUtil.is_leap_year(year) and idx == 1:
                     result += 28
                 else:
                     result += TimeUtil.month_days[idx]
-        return result+day
+        return result + day
 
     @staticmethod
     def week_of_year(dt: datetime) -> int:
-        return dt.isocalendar()[1]+1
+        return dt.isocalendar()[1] + 1
 
     @staticmethod
     def month_minus_day(dt: datetime) -> str:
         return "{}-{}".format(dt.month, dt.day)
-
 
     @staticmethod
     def get_days_index(dt: datetime) -> int:
@@ -136,8 +142,6 @@ class TimeUtil(object):
         if not TimeUtil.is_leap_year(dt.year) and dt.month > 2:
             idx -= 1
         return idx
-
-
 
     # print(TimeUtil.now())
     # print(TimeUtil.unix_now())

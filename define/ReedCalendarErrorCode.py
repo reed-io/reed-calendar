@@ -26,7 +26,9 @@ class ReedCalendarErrorCode(BaseErrorCode):
     DATE_DES_LIST_ITEM_INVALIDATE = ErrorCode(code=0x00b2, message="item in date_des_list is invalidate, maybe not string or empty")
     YEAR_CONFIG_NOT_FOUND = ErrorCode(code=0x00b3, message="can not find year data")
 
-
+    MONTH_CONFIG_NOT_FOUND = ErrorCode(code=0x00b4, message="can not find month data")
+    MONTH_DATA_VALUE_ERROR = ErrorCode(code=0x00b6, message="month data value is invalidate")
+    DAYS_REGION_EDGE_DATA_VALUE_ERROR = ErrorCode(code=0x00b7, message="days region edge value is error")
 
 
 

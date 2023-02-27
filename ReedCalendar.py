@@ -48,16 +48,16 @@ logging_config = {
         },
     },
     "handlers": {
-      "default": {
-          "formatter": "default",
-          "class": "logging.StreamHandler",
-          "stream": "ext://sys.stdout"
-      },
-      "access": {
-          "formatter": "access",
-          "class": "logging.StreamHandler",
-          "stream": "ext://sys.stdout"
-      }
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout"
+        },
+        "access": {
+            "formatter": "access",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout"
+        }
     },
     "loggers": {
         "": {
@@ -75,10 +75,10 @@ logging_config = {
     }
 }
 
-
 origins = [
     "http://localhost",
     "http://localhost:8080",
+    "*"
 ]
 
 ReedCalendar.add_middleware(
@@ -120,17 +120,22 @@ async def index():
 
 @ReedCalendar.exception_handler(HTTPException)
 async def fastapi_http_exception_handler(request: Request, exc: HTTPException):
-    logging.error(f"HTTPException\nURL:{request.url}\tMethod:{request.method}\n\tHeaders:{request.headers}\n{traceback.format_exc()}")
-    result = ReedResult.get(ErrorCode.UNKNOWN_ERROR, {"http_status_code": str(exc.status_code), "detail": str(exc.detail)})
+    logging.error(
+        f"HTTPException\nURL:{request.url}\tMethod:{request.method}\n\tHeaders:{request.headers}\n{traceback.format_exc()}")
+    result = ReedResult.get(ErrorCode.UNKNOWN_ERROR,
+                            {"http_status_code": str(exc.status_code), "detail": str(exc.detail)})
     return JSONResponse(
         status_code=exc.status_code,
         content=eval(result.standard_format())
     )
 
+
 @ReedCalendar.exception_handler(RequestValidationError)
 async def fastapi_request_validation_exception_handler(request: Request, exc: RequestValidationError):
-    logging.error(f"RequestValidationError\nURL:{request.url}\tMethod:{request.method}\n\tHeaders:{request.headers}\n{traceback.format_exc()}")
-    result = ReedResult.get(ErrorCode.REQUEST_VALIDATION_ERROR, {"tips": exc.errors(), "body": str(exc.body)}).standard_format()
+    logging.error(
+        f"RequestValidationError\nURL:{request.url}\tMethod:{request.method}\n\tHeaders:{request.headers}\n{traceback.format_exc()}")
+    result = ReedResult.get(ErrorCode.REQUEST_VALIDATION_ERROR,
+                            {"tips": exc.errors(), "body": str(exc.body)}).standard_format()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=eval(result)
@@ -139,8 +144,10 @@ async def fastapi_request_validation_exception_handler(request: Request, exc: Re
 
 @ReedCalendar.exception_handler(Exception)
 async def fastapi_exception_handler(request: Request, exc: Exception):
-    logging.error(f"Exception\nURL:{request.url}\tMethod:{request.method}\n\tHeaders:{request.headers}\n{traceback.format_exc()}")
-    result = ReedResult.get(ErrorCode.UNKNOWN_ERROR, {"tips": exc.__repr__(), "traceback": traceback.format_exc()}).standard_format()
+    logging.error(
+        f"Exception\nURL:{request.url}\tMethod:{request.method}\n\tHeaders:{request.headers}\n{traceback.format_exc()}")
+    result = ReedResult.get(ErrorCode.UNKNOWN_ERROR,
+                            {"tips": exc.__repr__(), "traceback": traceback.format_exc()}).standard_format()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=eval(result)
