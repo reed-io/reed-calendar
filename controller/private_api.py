@@ -273,12 +273,12 @@ async def put_date_configuration(request: Request, app_id: str, date: str, is_wo
             return result
 
     if date_des_list:
-        date_des_list = eval(date_des_list)
-        if type(date_des_list) is not list:
+        _date_des_list = eval(date_des_list)
+        if type(_date_des_list) is not list:
             logging.error("form args date_des_list is invalidate")
             result = ReedResult.get(ErrorCode.DATE_DES_LIST_INVALIDATE, date_des_list)
             return result
-        for des in date_des_list:
+        for des in _date_des_list:
             if type(des) is not str or StringUtil.isEmpty(des):
                 logging.error("form args date_des_list contains bad item")
                 result = ReedResult.get(ErrorCode.DATE_DES_LIST_ITEM_INVALIDATE, [date_des_list, des])
@@ -288,7 +288,7 @@ async def put_date_configuration(request: Request, app_id: str, date: str, is_wo
     d = TimeUtil.get_date(date)
     year_key = "year_" + str(d.year)
     app_id_exists = await redis_conn.exists(app_id_key)
-    modified_dict = {}
+    modified_dict = dict()
     if not app_id_exists:
         logging.error(f"{app_id} never configured yet")
         result = ReedResult.get(ErrorCode.APPID_NOT_CONFIGURED, app_id)
@@ -309,33 +309,31 @@ async def put_date_configuration(request: Request, app_id: str, date: str, is_wo
         logging.debug(f"after modify:{year_work_days}")
         await redis_conn.hset(app_id_key, year_key, year_work_days)
         modified_dict[str(d.year)] = year_work_days
-
-    app_id_important_days = await redis_conn.hget(app_id_key, ReedConst.KEY_IMPORTANT_DAYS.value)
-    logging.debug(type(app_id_important_days))
-    logging.debug(str(app_id_important_days))
-    # important_day = filter(lambda item: item["type"] == "normal" and item["key"] == str(d.month)+"-"+str(d.day), app_id_important_days)
-    contains_flag = False
-    app_id_important_days = eval(app_id_important_days)
-    for important_day in app_id_important_days:
-        # important_day = eval(important_day)
-        if important_day["type"] == "normal" and important_day["key"] == str(d.month) + "-" + str(d.day):
-            if date_des_list:
+    if date_des_list:
+        date_des_list = eval(date_des_list)
+        app_id_important_days = await redis_conn.hget(app_id_key, "important_days")
+        logging.debug(type(app_id_important_days))
+        logging.debug(str(app_id_important_days))
+        # important_day = filter(lambda item: item["type"] == "normal" and item["key"] == str(d.month)+"-"+str(d.day), app_id_important_days)
+        contains_flag = False
+        app_id_important_days = eval(app_id_important_days)
+        for important_day in app_id_important_days:
+            if important_day["type"] == "normal" and important_day["key"] == str(d.month) + "-" + str(d.day):
                 important_day["value"] = ",".join(date_des_list)
-            else:
-                """删除定义的normal类型纪念日"""
-                app_id_important_days.remove(important_day)
-            contains_flag = True
-            break
-    if date_des_list and not contains_flag:
-        important_day = {
-            "type": "normal",
-            "key": str(d.month) + "-" + str(d.day),
-            "value": ",".join(date_des_list)
-        }
-        app_id_important_days.append(important_day)
-    await redis_conn.hset(app_id_key, ReedConst.KEY_IMPORTANT_DAYS.value, str(app_id_important_days))
-    modified_dict[ReedConst.KEY_IMPORTANT_DAYS.value] = app_id_important_days
+                contains_flag = True
+                break
+        if not contains_flag and date_des_list:  # redis里没有，且列表不为空
+            important_day = {
+                "type": "normal",
+                "key": str(d.month) + "-" + str(d.day),
+                "value": ",".join(date_des_list)
+            }
+            app_id_important_days.append(important_day)
+        if contains_flag and not date_des_list:  # redis里有，且列表为空
+            app_id_important_days.remove(important_day)  # 删掉这天的数据
 
+        await redis_conn.hset(app_id_key, "important_days", str(app_id_important_days))
+        modified_dict["important_days"] = app_id_important_days
     result = ReedResult.get(ErrorCode.SUCCESS, modified_dict)
     return result
 
